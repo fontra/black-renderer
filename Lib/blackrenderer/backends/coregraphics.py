@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from math import sqrt
+from math import ceil, sqrt
 import os
 from fontTools.pens.basePen import BasePen
 from fontTools.ttLib.tables.otTables import CompositeMode, ExtendMode
@@ -134,14 +134,18 @@ class CoreGraphicsCanvas(Canvas):
     ):
         if self._shouldNotDrawPath(path):
             return
-        colors, stops = _unpackColorLine(colorLine)
-        gradient = CG.CGGradientCreateWithColors(_sRGBColorSpace, colors, stops)
         with self.savedState():
             if path is not None:
                 CG.CGContextAddPath(self.context, path.path)
                 CG.CGContextClip(self.context)
             # else: unbounded source, paint the existing clip area
             self.transform(gradientTransform)
+            if extendMode in (ExtendMode.REPEAT, ExtendMode.REFLECT):
+                colorLine, pt1, pt2 = _expandLinearGradient(
+                    self.context, colorLine, pt1, pt2, extendMode
+                )
+            colors, stops = _unpackColorLine(colorLine)
+            gradient = CG.CGGradientCreateWithColors(_sRGBColorSpace, colors, stops)
             CG.CGContextDrawLinearGradient(
                 self.context,
                 gradient,
@@ -164,14 +168,22 @@ class CoreGraphicsCanvas(Canvas):
     ):
         if self._shouldNotDrawPath(path):
             return
-        colors, stops = _unpackColorLine(colorLine)
-        gradient = CG.CGGradientCreateWithColors(_sRGBColorSpace, colors, stops)
         with self.savedState():
             if path is not None:
                 CG.CGContextAddPath(self.context, path.path)
                 CG.CGContextClip(self.context)
             # else: unbounded source, paint the existing clip area
             self.transform(gradientTransform)
+            if extendMode in (ExtendMode.REPEAT, ExtendMode.REFLECT):
+                colorLine, startCenter, startRadius, endCenter, endRadius = (
+                    _expandRadialGradient(
+                        self.context, colorLine,
+                        startCenter, startRadius, endCenter, endRadius,
+                        extendMode,
+                    )
+                )
+            colors, stops = _unpackColorLine(colorLine)
+            gradient = CG.CGGradientCreateWithColors(_sRGBColorSpace, colors, stops)
             CG.CGContextDrawRadialGradient(
                 self.context,
                 gradient,
@@ -210,7 +222,8 @@ class CoreGraphicsCanvas(Canvas):
             R = sqrt(maxX + maxY)
             # compute the triangle fan approximating the sweep gradient
             patches = buildSweepGradientPatches(
-                colorLine, center, R, startAngle, endAngle, useGouraudShading=True
+                colorLine, center, R, startAngle, endAngle,
+                useGouraudShading=True, extendMode=extendMode,
             )
             CG.CGContextBeginTransparencyLayer(self.context, None)
             CG.CGContextSetAllowsAntialiasing(self.context, False)
@@ -239,6 +252,145 @@ def _unpackColorLine(colorLine):
         colors.append(CG.CGColorCreate(_sRGBColorSpace, color))
         stops.append(stop)
     return colors, stops
+
+
+def _expandLinearGradient(context, colorLine, pt1, pt2, extendMode):
+    """Expand a linear gradient's color line and endpoints to simulate
+    REPEAT or REFLECT extend modes, which CoreGraphics doesn't support natively.
+    """
+    # Get clip bounds in gradient space (after gradientTransform was applied)
+    (bx, by), (bw, bh) = CG.CGContextGetClipBoundingBox(context)
+    corners = [
+        (bx, by), (bx + bw, by), (bx, by + bh), (bx + bw, by + bh)
+    ]
+
+    # Compute gradient direction vector
+    dx = pt2[0] - pt1[0]
+    dy = pt2[1] - pt1[1]
+    lenSq = dx * dx + dy * dy
+    if lenSq < 1e-10:
+        return colorLine, pt1, pt2
+
+    # Project clip box corners onto gradient axis to find t range
+    tValues = []
+    for cx, cy in corners:
+        t = ((cx - pt1[0]) * dx + (cy - pt1[1]) * dy) / lenSq
+        tValues.append(t)
+    tMin = min(tValues)
+    tMax = max(tValues)
+
+    # Determine repetition range
+    repMin = int(tMin) - 1 if tMin < 0 else 0
+    repMax = int(tMax) + 1 if tMax > 1 else 1
+    numReps = repMax - repMin
+
+    if numReps <= 1:
+        return colorLine, pt1, pt2
+
+    # Build expanded color line
+    newColorLine = []
+    for i in range(repMin, repMax):
+        repIndex = i - repMin
+        if extendMode == ExtendMode.REFLECT and i % 2 != 0:
+            # Reversed
+            for stop, color in reversed(colorLine):
+                newStop = (repIndex + (1 - stop)) / numReps
+                newColorLine.append((newStop, color))
+        else:
+            for stop, color in colorLine:
+                newStop = (repIndex + stop) / numReps
+                newColorLine.append((newStop, color))
+
+    # Expand endpoints
+    newPt1 = (
+        pt1[0] + repMin * dx,
+        pt1[1] + repMin * dy,
+    )
+    newPt2 = (
+        pt1[0] + repMax * dx,
+        pt1[1] + repMax * dy,
+    )
+
+    return newColorLine, newPt1, newPt2
+
+
+def _expandRadialGradient(
+    context, colorLine, startCenter, startRadius, endCenter, endRadius, extendMode
+):
+    """Expand a radial gradient's color line and parameters to simulate
+    REPEAT or REFLECT extend modes, which CoreGraphics doesn't support natively.
+
+    Extends both inward (t < 0) and outward (t > 1) to cover the visible area.
+    """
+    (bx, by), (bw, bh) = CG.CGContextGetClipBoundingBox(context)
+    corners = [
+        (bx, by), (bx + bw, by), (bx, by + bh), (bx + bw, by + bh)
+    ]
+
+    radiusDiff = endRadius - startRadius
+    centerDx = endCenter[0] - startCenter[0]
+    centerDy = endCenter[1] - startCenter[1]
+
+    if abs(radiusDiff) < 1e-10 and (centerDx * centerDx + centerDy * centerDy) < 1e-10:
+        return colorLine, startCenter, startRadius, endCenter, endRadius
+
+    # Max distance from gradient start center to any clip corner
+    maxDist = 0
+    for cx, cy in corners:
+        dist = sqrt((cx - startCenter[0]) ** 2 + (cy - startCenter[1]) ** 2)
+        maxDist = max(maxDist, dist)
+
+    # Forward reps needed (t > 1)
+    if abs(radiusDiff) > 1e-10:
+        repMax = int(ceil(maxDist / abs(radiusDiff))) + 1
+    else:
+        centerDist = sqrt(centerDx * centerDx + centerDy * centerDy)
+        repMax = int(ceil(maxDist / centerDist)) + 1 if centerDist > 1e-10 else 1
+
+    # Backward reps needed (t < 0) — only extend inward to where radius
+    # is still positive; stop before it would go to 0 to avoid distorting
+    # the geometry (CG clamps negative radii, breaking the interpolation)
+    repMin = 0
+    if startRadius > 0 and abs(radiusDiff) > 1e-10:
+        # t where radius=0: t_zero = -startRadius / radiusDiff
+        # Only extend to integer reps that keep radius positive
+        t_zero = -startRadius / radiusDiff
+        if t_zero < 0:
+            repMin = int(t_zero)  # truncate toward zero (e.g. -1.33 → -1)
+
+    repMax = min(repMax, 50)
+    repMin = max(repMin, -50)
+    totalReps = repMax - repMin
+
+    if totalReps <= 1:
+        return colorLine, startCenter, startRadius, endCenter, endRadius
+
+    # Build expanded color line covering [repMin, repMax)
+    newColorLine = []
+    for i in range(repMin, repMax):
+        idx = i - repMin
+        if extendMode == ExtendMode.REFLECT and i % 2 != 0:
+            for stop, color in reversed(colorLine):
+                newColorLine.append(((idx + (1 - stop)) / totalReps, color))
+        else:
+            for stop, color in colorLine:
+                newColorLine.append(((idx + stop) / totalReps, color))
+
+    def _lerp(a, b, t):
+        return a + t * (b - a)
+
+    newStartCenter = (
+        _lerp(startCenter[0], endCenter[0], repMin),
+        _lerp(startCenter[1], endCenter[1], repMin),
+    )
+    newStartRadius = max(0, _lerp(startRadius, endRadius, repMin))
+    newEndCenter = (
+        _lerp(startCenter[0], endCenter[0], repMax),
+        _lerp(startCenter[1], endCenter[1], repMax),
+    )
+    newEndRadius = max(0, _lerp(startRadius, endRadius, repMax))
+
+    return newColorLine, newStartCenter, newStartRadius, newEndCenter, newEndRadius
 
 
 class CoreGraphicsPixelSurface(Surface):
