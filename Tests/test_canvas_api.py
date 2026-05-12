@@ -52,7 +52,7 @@ def test_colorStops(backendName, surfaceClass, stopOffsets, extend):
     expectedPath = expectedOutputDir / fileName
     outputPath = tmpOutputDir / fileName
     surface.saveImage(outputPath)
-    assert expectedPath.read_bytes() == outputPath.read_bytes()
+    assertSameFileBytes(expectedPath, outputPath)
 
 
 @pytest.mark.parametrize("extend", test_extendModes)
@@ -84,7 +84,17 @@ def test_sweepGradient(backendName, surfaceClass, extend):
     expectedPath = expectedOutputDir / fileName
     outputPath = tmpOutputDir / fileName
     surface.saveImage(outputPath)
-    assert expectedPath.read_bytes() == outputPath.read_bytes()
+    assertSameFileBytes(expectedPath, outputPath)
+
+
+def assertSameFileBytes(expectedPath, outputPath):
+    if expectedPath.read_bytes() != outputPath.read_bytes():
+        pytest.fail(
+            f"output differs from expected golden:\n"
+            f"expected: {expectedPath}\n"
+            f"output:   {outputPath}",
+            pytrace=False,
+        )
 
 
 test_compositeModes = [
