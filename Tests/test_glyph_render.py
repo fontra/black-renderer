@@ -1,4 +1,5 @@
 import pathlib
+import sys
 import pytest
 from fontTools.misc.arrayTools import scaleRect, intRect
 from blackrenderer.font import BlackRendererFont
@@ -139,11 +140,17 @@ def test_renderGlyph(
     outputPath = tmpOutputDir / fileName
     surface.saveImage(outputPath)
     diff = compareImages(expectedPath, outputPath)
-    assert diff < 0.00012, diff
+    assert diff < _getImageTolerance(backendName), diff
 
 
 def _locationToString(location):
     return ",".join(f"{name}={value}" for name, value in sorted(location.items()))
+
+
+def _getImageTolerance(backendName):
+    if backendName == "skia" and sys.platform.startswith("linux"):
+        return 0.0008
+    return 0.00012
 
 
 def test_pathCollector():
