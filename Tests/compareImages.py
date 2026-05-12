@@ -24,8 +24,8 @@ def compareImages(path1, path2):
         if im1 is None or im2 is None:
             return 1
     else:
-        im1 = Image.open(path1)
-        im2 = Image.open(path2)
+        im1 = _normalizeTransparentPixels(Image.open(path1))
+        im2 = _normalizeTransparentPixels(Image.open(path2))
 
     if im1.size != im2.size:
         # Dimensions differ, can't compare further
@@ -59,6 +59,17 @@ def compareImages(path1, path2):
     average = average / 255
     assert 0.0 <= average <= 1.0
     return average
+
+
+def _normalizeTransparentPixels(image):
+    """Make fully transparent pixels comparable regardless of hidden RGB data."""
+    image = image.convert("RGBA")
+    if image.getchannel("A").getextrema()[0] != 0:
+        return image
+
+    transparent = Image.new("RGBA", image.size, (0, 0, 0, 0))
+    alpha = image.getchannel("A")
+    return Image.composite(image, transparent, alpha)
 
 
 def compareFiles(path1, path2):
