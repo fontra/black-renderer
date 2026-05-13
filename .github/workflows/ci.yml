@@ -64,6 +64,8 @@ jobs:
     # ... and all build jobs completed successfully
     needs: [build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
