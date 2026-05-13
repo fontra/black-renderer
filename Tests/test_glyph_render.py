@@ -6,7 +6,6 @@ from blackrenderer.backends import getSurfaceClass
 from blackrenderer.backends.pathCollector import BoundsCanvas, PathCollectorCanvas
 from compareImages import compareImages
 
-
 testDir = pathlib.Path(__file__).resolve().parent
 dataDir = testDir / "data"
 expectedOutputDir = testDir / "expectedOutput"

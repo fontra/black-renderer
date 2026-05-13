@@ -1,7 +1,6 @@
 from collections import defaultdict
 import importlib
 
-
 _surfaces = {
     None: {
         "cairo": "blackrenderer.backends.cairo.CairoPixelSurface",

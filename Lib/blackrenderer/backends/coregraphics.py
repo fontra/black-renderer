@@ -8,7 +8,6 @@ import Quartz as CG
 from .base import Canvas, Surface
 from .sweepGradient import buildSweepGradientPatches
 
-
 _compositeModeMap = {
     CompositeMode.CLEAR: CG.kCGBlendModeClear,
     CompositeMode.SRC: CG.kCGBlendModeCopy,
@@ -177,8 +176,12 @@ class CoreGraphicsCanvas(Canvas):
             if extendMode in (ExtendMode.REPEAT, ExtendMode.REFLECT):
                 colorLine, startCenter, startRadius, endCenter, endRadius = (
                     _expandRadialGradient(
-                        self.context, colorLine,
-                        startCenter, startRadius, endCenter, endRadius,
+                        self.context,
+                        colorLine,
+                        startCenter,
+                        startRadius,
+                        endCenter,
+                        endRadius,
                         extendMode,
                     )
                 )
@@ -222,8 +225,13 @@ class CoreGraphicsCanvas(Canvas):
             R = sqrt(maxX + maxY)
             # compute the triangle fan approximating the sweep gradient
             patches = buildSweepGradientPatches(
-                colorLine, center, R, startAngle, endAngle,
-                useGouraudShading=True, extendMode=extendMode,
+                colorLine,
+                center,
+                R,
+                startAngle,
+                endAngle,
+                useGouraudShading=True,
+                extendMode=extendMode,
             )
             CG.CGContextBeginTransparencyLayer(self.context, None)
             CG.CGContextSetAllowsAntialiasing(self.context, False)
@@ -260,9 +268,7 @@ def _expandLinearGradient(context, colorLine, pt1, pt2, extendMode):
     """
     # Get clip bounds in gradient space (after gradientTransform was applied)
     (bx, by), (bw, bh) = CG.CGContextGetClipBoundingBox(context)
-    corners = [
-        (bx, by), (bx + bw, by), (bx, by + bh), (bx + bw, by + bh)
-    ]
+    corners = [(bx, by), (bx + bw, by), (bx, by + bh), (bx + bw, by + bh)]
 
     # Compute gradient direction vector
     dx = pt2[0] - pt1[0]
@@ -323,9 +329,7 @@ def _expandRadialGradient(
     Extends both inward (t < 0) and outward (t > 1) to cover the visible area.
     """
     (bx, by), (bw, bh) = CG.CGContextGetClipBoundingBox(context)
-    corners = [
-        (bx, by), (bx + bw, by), (bx, by + bh), (bx + bw, by + bh)
-    ]
+    corners = [(bx, by), (bx + bw, by), (bx, by + bh), (bx + bw, by + bh)]
 
     radiusDiff = endRadius - startRadius
     centerDx = endCenter[0] - startCenter[0]

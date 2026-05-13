@@ -3,7 +3,6 @@ import pathlib
 import subprocess
 import pytest
 
-
 dataDir = pathlib.Path(__file__).resolve().parent / "data"
 
 

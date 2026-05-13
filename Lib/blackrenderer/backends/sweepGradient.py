@@ -46,8 +46,13 @@ def buildSweepGradientPatches(
         )
 
     return _buildPatches(
-        colorLine, center, radius, startAngle, endAngle,
-        useGouraudShading, maxAngle,
+        colorLine,
+        center,
+        radius,
+        startAngle,
+        endAngle,
+        useGouraudShading,
+        maxAngle,
     )
 
 
@@ -140,20 +145,20 @@ def _extendedSegmentSamples(colorLine, t0, t1, extendMode):
     samples = []
     for stop in sorted(stop for stop in stops if t0 <= stop <= t1):
         if stop == t0:
-            samples.append((stop, _sampleExtendedColorLine(
-                colorLine, stop, extendMode, side=1
-            )))
+            samples.append(
+                (stop, _sampleExtendedColorLine(colorLine, stop, extendMode, side=1))
+            )
         elif stop == t1:
-            samples.append((stop, _sampleExtendedColorLine(
-                colorLine, stop, extendMode, side=-1
-            )))
+            samples.append(
+                (stop, _sampleExtendedColorLine(colorLine, stop, extendMode, side=-1))
+            )
         else:
-            samples.append((stop, _sampleExtendedColorLine(
-                colorLine, stop, extendMode, side=-1
-            )))
-            samples.append((stop, _sampleExtendedColorLine(
-                colorLine, stop, extendMode, side=1
-            )))
+            samples.append(
+                (stop, _sampleExtendedColorLine(colorLine, stop, extendMode, side=-1))
+            )
+            samples.append(
+                (stop, _sampleExtendedColorLine(colorLine, stop, extendMode, side=1))
+            )
     return samples
 
 
@@ -188,8 +193,13 @@ def _sampleColorLine(colorLine, t):
 
 
 def _buildPatches(
-    colorLine, center, radius, startAngle, endAngle,
-    useGouraudShading, maxAngle,
+    colorLine,
+    center,
+    radius,
+    startAngle,
+    endAngle,
+    useGouraudShading,
+    maxAngle,
 ):
     """Build triangle/Coons patches for the given color line and angle range."""
     patches = []
