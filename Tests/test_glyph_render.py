@@ -205,9 +205,9 @@ def test_vectorBackends(backendName, imageSuffix):
     expectedPath = expectedOutputDir / fileName
     outputPath = tmpOutputDir / fileName
     surface.saveImage(outputPath)
-    # For now, just be happy the code works.
-    # - Cairo PDFs contain the creation date
-    # - CoreGraphics PDFs are weirdly different while looking the same
+
+    # Vector backends can serialize the same drawing differently across
+    # renderer/platform versions, so compare rendered output instead of bytes.
     # assert expectedPath.read_bytes() == outputPath.read_bytes()
     diff = compareImages(expectedPath, outputPath)
     assert diff < 0.00012, diff

@@ -1,26 +1,27 @@
 import io
-import re
+import shutil
+import subprocess
 import sys
+import tempfile
+import xml.etree.ElementTree as ET
 from PIL import Image, ImageChops
 
 
 def compareImages(path1, path2):
     """Compare two image files and return a number representing how similar they are.
-    A value of 0 means that the images are identical, a value of 1 means they are maximally
-    different or not comparable (for example, when their dimensions differ).
+    A value of 0 means that the images are identical, a value of 1 means they are
+    maximally different or not comparable (for example, when their dimensions differ).
     """
     assert path1.suffix == path2.suffix
     suffix = path1.suffix.lower()
     if suffix == ".svg":
-        svgEqual = compareSVG(path1, path2)
-        if svgEqual:
-            return 0
-        else:
+        im1 = renderSVG(path1)
+        im2 = renderSVG(path2)
+        if im1 is None or im2 is None:
             return 1
     elif suffix == ".pdf":
-        pdfEqual, im1, im2 = comparePDF(path1, path2)
-        if pdfEqual:
-            return 0
+        im1 = renderPDF(path1, path2.parent)
+        im2 = renderPDF(path2, path2.parent)
         if im1 is None or im2 is None:
             return 1
     else:
@@ -72,47 +73,77 @@ def _normalizeTransparentPixels(image):
     return Image.composite(image, transparent, alpha)
 
 
-def compareFiles(path1, path2):
-    return path1.read_bytes() != path2.read_bytes()
+def renderSVG(path):
+    if shutil.which("rsvg-convert") is None:
+        return None
+
+    with tempfile.TemporaryDirectory(dir=path.parent) as tempDir:
+        outputPath = f"{tempDir}/rendered.png"
+        command = ["rsvg-convert", "--format=png", "--output", outputPath]
+        renderSize = _getSVGRenderSize(path)
+        if renderSize is not None:
+            width, height = renderSize
+            command.extend(["--width", str(width), "--height", str(height)])
+        command.append(str(path))
+        subprocess.run(
+            command,
+            check=True,
+        )
+        return _normalizeTransparentPixels(Image.open(outputPath))
 
 
-_svgIgnore = [
-    (rb'"surface\d+"', b'"surface***"'),
-    (rb'"#surface\d+"', b'"#surface***"'),
-]
+def _getSVGRenderSize(path):
+    try:
+        root = ET.parse(path).getroot()
+    except ET.ParseError:
+        return None
+
+    viewBox = root.attrib.get("viewBox")
+    if viewBox is not None:
+        values = [float(value) for value in viewBox.split()]
+        if len(values) == 4:
+            return _roundDimension(values[2]), _roundDimension(values[3])
+
+    width = _parseSVGDimension(root.attrib.get("width"))
+    height = _parseSVGDimension(root.attrib.get("height"))
+    if width is not None and height is not None:
+        return _roundDimension(width), _roundDimension(height)
+    return None
 
 
-def compareSVG(path1, path2):
-    data1 = path1.read_bytes()
-    data2 = path2.read_bytes()
-    return _filterData(data1, _svgIgnore) == _filterData(data2, _svgIgnore)
+def _parseSVGDimension(value):
+    if value is None:
+        return None
+    for suffix in ("px", "pt"):
+        if value.endswith(suffix):
+            value = value[: -len(suffix)]
+    try:
+        return float(value)
+    except ValueError:
+        return None
 
 
-_pdfIgnore = [
-    (rb"/Producer \(cairo [^ ]+ \(", b"/Producer (cairo ****** ("),
-    (rb"/CreationDate \([^)]+\)", b"/CreationDate (00000000)"),
-    (rb"0000000000 65535 f[^t]+trailer", b"******"),
-    (rb"startxref[^%]+%%EOF", b"******"),
-]
+def _roundDimension(value):
+    return max(1, round(value))
 
 
-def comparePDF(path1, path2):
-    data1 = path1.read_bytes()
-    data2 = path2.read_bytes()
-    if _filterData(data1, _pdfIgnore) == _filterData(data2, _pdfIgnore):
-        return True, None, None
+def renderPDF(path, tempParent):
     if sys.platform == "darwin":
-        im1 = macRenderPDF(data1)
-        im2 = macRenderPDF(data2)
-        return None, im1, im2
-    else:
-        return False, None, None
+        image = macRenderPDF(path.read_bytes())
+        if image is None:
+            return None
+        return _normalizeTransparentPixels(image)
 
+    if shutil.which("pdftocairo") is None:
+        return None
 
-def _filterData(data, ignorePatterns):
-    for pat, repl in ignorePatterns:
-        data = re.sub(pat, repl, data)
-    return data
+    with tempfile.TemporaryDirectory(dir=tempParent) as tempDir:
+        outputPrefix = f"{tempDir}/rendered"
+        subprocess.run(
+            ["pdftocairo", "-singlefile", "-png", "-r", "72", str(path), outputPrefix],
+            check=True,
+        )
+        return _normalizeTransparentPixels(Image.open(f"{outputPrefix}.png"))
 
 
 def macRenderPDF(data):
