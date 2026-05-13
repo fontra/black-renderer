@@ -1,5 +1,5 @@
 pytest==8.4.2
-skia-python==87.9
+skia-python==144.0.post2
 numpy==2.1.1
 pycairo==1.29.0; sys_platform != 'darwin'
 pyobjc==12.1; sys_platform == 'darwin'
