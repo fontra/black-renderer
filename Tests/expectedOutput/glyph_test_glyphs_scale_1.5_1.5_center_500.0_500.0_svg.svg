@@ -1,0 +1,5 @@
+<?xml version='1.0' encoding='ASCII'?>
+<svg width="188" height="188" preserveAspectRatio="xMinYMin slice" viewBox="31 31 188 188" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <path d="M475,525 v225 h50 v-225 h225 v-50 h-225 v-225 h-50 v225 h-225 v50 h225 Z" fill="#0000FF" fill-opacity="0.5" transform="matrix(0.25,0,0,-0.25,0,250)"/>
+  <path d="M475,525 v225 h50 v-225 h225 v-50 h-225 v-225 h-50 v225 h-225 v50 h225 Z" fill="#FFA500" fill-opacity="0.7" transform="matrix(0.375,0,0,-0.375,-62.5,312.5)"/>
+</svg>

@@ -1,5 +1,4 @@
 import pathlib
-import sys
 import pytest
 from fontTools.misc.arrayTools import scaleRect, intRect
 from blackrenderer.font import BlackRendererFont
@@ -26,7 +25,7 @@ testFonts = {
     "noto": dataDir / "noto-glyf_colr_1.ttf",
     "mutator": dataDir / "MutatorSans.ttf",
     "twemoji": dataDir / "TwemojiMozilla.subset.default.3299.ttf",
-    "more_samples": dataDir / "more_samples-glyf_colr_1.ttf",
+    "test_glyphs": dataDir / "test_glyphs-glyf_colr_1.ttf",
     "crash": dataDir / "crash.subset.otf",
     "nested_paintglyph": dataDir / "nested-paintglyph.ttf",
     "ftvartest": dataDir / "TestVariableCOLR-VF.ttf",
@@ -44,58 +43,63 @@ test_glyphs = [
     ("mutator", "B", None, 0),
     ("mutator", "D", {"wdth": 1000}, 0),
     ("twemoji", "uni3299", None, 0),
-    ("more_samples", "cross_glyph", None, 0),
-    ("more_samples", "skew_0_15_center_500.0_500.0", None, 0),
-    ("more_samples", "skew_-10_20_center_500.0_500.0", None, 0),
-    ("more_samples", "skew_-10_20_center_1000_1000", None, 0),
-    ("more_samples", "transform_matrix_1_0_0_1_125_125", None, 0),
-    ("more_samples", "transform_matrix_1.5_0_0_1.5_0_0", None, 0),
-    ("more_samples", "transform_matrix_0.9659_0.2588_-0.2588_0.9659_0_0", None, 0),
-    ("more_samples", "transform_matrix_1.0_0.0_0.6_1.0_-300.0_0.0", None, 0),
-    ("more_samples", "clip_box_top_left", None, 0),
-    ("more_samples", "clip_box_bottom_left", None, 0),
-    ("more_samples", "clip_box_bottom_right", None, 0),
-    ("more_samples", "clip_box_top_right", None, 0),
-    ("more_samples", "clip_box_center", None, 0),
-    ("more_samples", "composite_DEST_OVER", None, 0),
-    ("more_samples", "composite_XOR", None, 0),
-    ("more_samples", "composite_OVERLAY", None, 0),
-    ("more_samples", "composite_SRC_IN", None, 0),
-    ("more_samples", "composite_PLUS", None, 0),
-    ("more_samples", "composite_LIGHTEN", None, 0),
-    ("more_samples", "composite_MULTIPLY", None, 0),
-    ("more_samples", "clip_shade_center", None, 0),
-    ("more_samples", "clip_shade_top_left", None, 0),
-    ("more_samples", "clip_shade_bottom_left", None, 0),
-    ("more_samples", "clip_shade_bottom_right", None, 0),
-    ("more_samples", "clip_shade_top_right", None, 0),
-    ("more_samples", "inset_clipped_radial_reflect", None, 0),
-    ("more_samples", "transformed_sweep", None, 0),
-    ("more_samples", "composite_colr_glyph", None, 0),
-    ("more_samples", "linear_repeat_0_1", None, 0),
-    ("more_samples", "linear_repeat_0.2_0.8", None, 0),
-    ("more_samples", "linear_repeat_0_1.5", None, 0),
-    ("more_samples", "linear_repeat_0.5_1.5", None, 0),
-    ("more_samples", "scale_0.5_1.5_center_500.0_500.0", None, 0),
-    ("more_samples", "scale_1.5_1.5_center_500.0_500.0", None, 0),
-    ("more_samples", "scale_0.5_1.5_center_0_0", None, 0),
-    ("more_samples", "scale_1.5_1.5_center_0_0", None, 0),
-    ("more_samples", "scale_0.5_1.5_center_1000_1000", None, 0),
-    ("more_samples", "scale_1.5_1.5_center_1000_1000", None, 0),
-    ("more_samples", "linear_gradient_extend_mode_pad", None, 0),
-    ("more_samples", "linear_gradient_extend_mode_repeat", None, 0),
-    ("more_samples", "linear_gradient_extend_mode_reflect", None, 0),
-    ("more_samples", "radial_gradient_extend_mode_pad", None, 0),
-    ("more_samples", "radial_gradient_extend_mode_repeat", None, 0),
-    ("more_samples", "radial_gradient_extend_mode_reflect", None, 0),
-    ("more_samples", "rotate_10_center_0_0", None, 0),
-    ("more_samples", "rotate_-10_center_1000_1000", None, 0),
-    ("more_samples", "rotate_25_center_500.0_500.0", None, 0),
-    ("more_samples", "rotate_-15_center_500.0_500.0", None, 0),
-    ("more_samples", "skew_25_0_center_0_0", None, 0),
-    ("more_samples", "skew_25_0_center_500.0_500.0", None, 0),
-    ("more_samples", "skew_0_15_center_0_0", None, 0),
-    ("more_samples", "upem_box_glyph", None, 0),
+    ("test_glyphs", "cross_glyph", None, 0),
+    ("test_glyphs", "skew_0_15_center_500.0_500.0", None, 0),
+    ("test_glyphs", "skew_-10_20_center_500.0_500.0", None, 0),
+    ("test_glyphs", "skew_-10_20_center_1000_1000", None, 0),
+    ("test_glyphs", "transform_matrix_1_0_0_1_125_125", None, 0),
+    ("test_glyphs", "transform_matrix_1.5_0_0_1.5_0_0", None, 0),
+    ("test_glyphs", "transform_matrix_0.9659_0.2588_-0.2588_0.9659_0_0", None, 0),
+    ("test_glyphs", "transform_matrix_1.0_0.0_0.6_1.0_-300.0_0.0", None, 0),
+    ("test_glyphs", "clip_box_top_left", None, 0),
+    ("test_glyphs", "clip_box_bottom_left", None, 0),
+    ("test_glyphs", "clip_box_bottom_right", None, 0),
+    ("test_glyphs", "clip_box_top_right", None, 0),
+    ("test_glyphs", "clip_box_center", None, 0),
+    ("test_glyphs", "composite_DEST_OVER", None, 0),
+    ("test_glyphs", "composite_XOR", None, 0),
+    ("test_glyphs", "composite_OVERLAY", None, 0),
+    ("test_glyphs", "composite_SRC_IN", None, 0),
+    ("test_glyphs", "composite_PLUS", None, 0),
+    ("test_glyphs", "composite_LIGHTEN", None, 0),
+    ("test_glyphs", "composite_MULTIPLY", None, 0),
+    ("test_glyphs", "clip_shade_center", None, 0),
+    ("test_glyphs", "clip_shade_top_left", None, 0),
+    ("test_glyphs", "clip_shade_bottom_left", None, 0),
+    ("test_glyphs", "clip_shade_bottom_right", None, 0),
+    ("test_glyphs", "clip_shade_top_right", None, 0),
+    ("test_glyphs", "inset_clipped_radial_reflect", None, 0),
+    ("test_glyphs", "sweep_90_0_pad_narrow", None, 0),
+    ("test_glyphs", "sweep_90_0_reflect_narrow", None, 0),
+    ("test_glyphs", "sweep_90_0_repeat_narrow", None, 0),
+    ("test_glyphs", "sweep_440_270_pad_wide", None, 0),
+    ("test_glyphs", "linear_repeat_0_1", None, 0),
+    ("test_glyphs", "linear_repeat_0.2_0.8", None, 0),
+    ("test_glyphs", "linear_repeat_0_1.5", None, 0),
+    ("test_glyphs", "linear_repeat_0.5_1.5", None, 0),
+    ("test_glyphs", "scale_0.5_1.5_center_500.0_500.0", None, 0),
+    ("test_glyphs", "scale_1.5_1.5_center_500.0_500.0", None, 0),
+    ("test_glyphs", "scale_0.5_1.5_center_0_0", None, 0),
+    ("test_glyphs", "scale_1.5_1.5_center_0_0", None, 0),
+    ("test_glyphs", "scale_0.5_1.5_center_1000_1000", None, 0),
+    ("test_glyphs", "scale_1.5_1.5_center_1000_1000", None, 0),
+    ("test_glyphs", "linear_gradient_extend_mode_pad", None, 0),
+    ("test_glyphs", "linear_gradient_extend_mode_repeat", None, 0),
+    ("test_glyphs", "linear_gradient_extend_mode_reflect", None, 0),
+    ("test_glyphs", "radial_contained_gradient_extend_mode_pad", None, 0),
+    ("test_glyphs", "radial_contained_gradient_extend_mode_repeat", None, 0),
+    ("test_glyphs", "radial_contained_gradient_extend_mode_reflect", None, 0),
+    ("test_glyphs", "radial_horizontal_gradient_extend_mode_pad", None, 0),
+    ("test_glyphs", "radial_horizontal_gradient_extend_mode_repeat", None, 0),
+    ("test_glyphs", "radial_horizontal_gradient_extend_mode_reflect", None, 0),
+    ("test_glyphs", "rotate_10_center_0_0", None, 0),
+    ("test_glyphs", "rotate_-10_center_1000_1000", None, 0),
+    ("test_glyphs", "rotate_25_center_500.0_500.0", None, 0),
+    ("test_glyphs", "rotate_-15_center_500.0_500.0", None, 0),
+    ("test_glyphs", "skew_25_0_center_0_0", None, 0),
+    ("test_glyphs", "skew_25_0_center_500.0_500.0", None, 0),
+    ("test_glyphs", "skew_0_15_center_0_0", None, 0),
+    ("test_glyphs", "upem_box_glyph", None, 0),
     ("nested_paintglyph", "A", None, 0),
     ("ftvartest", "A", {"wght": 400}, 0),
     ("ftvartest", "A", {"wght": 700}, 0),
@@ -148,7 +152,7 @@ def _locationToString(location):
 
 
 def _getImageTolerance(backendName):
-    if backendName == "skia" and sys.platform.startswith("linux"):
+    if backendName == "skia":
         return 0.0008
     return 0.00012
 
@@ -171,10 +175,10 @@ def test_boundsCanvas():
     font.drawGlyph("A", canvas)
     assert (50, 0, 1140, 700) == canvas.bounds
 
-    font = BlackRendererFont(testFonts["more_samples"])
+    font = BlackRendererFont(testFonts["test_glyphs"])
     canvas = BoundsCanvas()
-    font.drawGlyph("transformed_sweep", canvas)
-    assert (308, 194, 1019, 906) == tuple(round(v) for v in canvas.bounds)
+    font.drawGlyph("sweep_90_0_pad_narrow", canvas)
+    assert (150, 250, 850, 950) == tuple(round(v) for v in canvas.bounds)
 
 
 vectorBackends = [

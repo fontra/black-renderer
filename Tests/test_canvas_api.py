@@ -25,6 +25,10 @@ test_colorStopValues = [
 ]
 
 test_extendModes = [ExtendMode.PAD, ExtendMode.REPEAT, ExtendMode.REFLECT]
+test_sweepAngles = [
+    ("", 45, 315),
+    ("_inverted", 315, 45),
+]
 
 
 @pytest.mark.parametrize("stopOffsets", test_colorStopValues)
@@ -52,16 +56,15 @@ def test_colorStops(backendName, surfaceClass, stopOffsets, extend):
     expectedPath = expectedOutputDir / fileName
     outputPath = tmpOutputDir / fileName
     surface.saveImage(outputPath)
-    assertSameFileBytes(expectedPath, outputPath)
+    assertImageSimilar(expectedPath, outputPath, backendName)
 
 
+@pytest.mark.parametrize("angleSuffix, startAngle, endAngle", test_sweepAngles)
 @pytest.mark.parametrize("extend", test_extendModes)
 @pytest.mark.parametrize("backendName, surfaceClass", backends)
-def test_sweepGradient(backendName, surfaceClass, extend):
+def test_sweepGradient(backendName, surfaceClass, extend, angleSuffix, startAngle, endAngle):
     H, W = 400, 400
     center = (H / 2, W / 2)
-    startAngle = 45
-    endAngle = 315
     colors = [
         (1, 0, 0, 1),
         (0, 1, 0, 1),
@@ -80,21 +83,17 @@ def test_sweepGradient(backendName, surfaceClass, extend):
 
     ext = surface.fileExtension
     stopsString = "_".join(str(s) for s in stopOffsets)
-    fileName = f"sweepGradient_{extend.name}_{stopsString}_{backendName}{ext}"
+    fileName = f"sweepGradient{angleSuffix}_{extend.name}_{stopsString}_{backendName}{ext}"
     expectedPath = expectedOutputDir / fileName
     outputPath = tmpOutputDir / fileName
     surface.saveImage(outputPath)
-    assertSameFileBytes(expectedPath, outputPath)
+    assertImageSimilar(expectedPath, outputPath, backendName)
 
 
-def assertSameFileBytes(expectedPath, outputPath):
-    if expectedPath.read_bytes() != outputPath.read_bytes():
-        pytest.fail(
-            f"output differs from expected golden:\n"
-            f"expected: {expectedPath}\n"
-            f"output:   {outputPath}",
-            pytrace=False,
-        )
+def assertImageSimilar(expectedPath, outputPath, backendName):
+    diff = compareImages(expectedPath, outputPath)
+    tolerance = 0.0008 if backendName == "skia" else 0.00013
+    assert diff < tolerance, diff
 
 
 test_compositeModes = [

@@ -33,18 +33,9 @@ def buildSweepGradientPatches(
         gradient's angle range. If provided, the patches will cover the full
         360° circle."""
 
-    # When endAngle < startAngle, the sweep covers the SHORT arc going CW.
-    # For our CCW triangle fan, swap angles and reverse the color line so
-    # we traverse the same arc in CCW order with reversed colors.
-    if endAngle < startAngle:
-        startAngle, endAngle = endAngle, startAngle
-        colorLine = [(1.0 - stop, color) for stop, color in reversed(colorLine)]
-
-    # Normalize angles to [0, 360) range and ensure startAngle < endAngle
-    startAngle %= 360
-    endAngle %= 360
-    if startAngle >= endAngle:
-        endAngle += 360
+    colorLine, startAngle, endAngle = normalizeSweepColorLineAndAngles(
+        colorLine, startAngle, endAngle
+    )
 
     angleRange = endAngle - startAngle
 
@@ -58,6 +49,23 @@ def buildSweepGradientPatches(
         colorLine, center, radius, startAngle, endAngle,
         useGouraudShading, maxAngle,
     )
+
+
+def normalizeSweepColorLineAndAngles(colorLine, startAngle, endAngle):
+    # When endAngle < startAngle, the sweep covers the arc going clockwise.
+    # Our backends consume increasing angles, so swap angles and reverse the
+    # color line to draw the same color rays.
+    if endAngle < startAngle:
+        startAngle, endAngle = endAngle, startAngle
+        colorLine = [(1.0 - stop, color) for stop, color in reversed(colorLine)]
+
+    # Normalize angles to [0, 360) range and ensure startAngle < endAngle.
+    startAngle %= 360
+    endAngle %= 360
+    if startAngle >= endAngle:
+        endAngle += 360
+
+    return colorLine, startAngle, endAngle
 
 
 def _extendColorLineForFullCircle(colorLine, startAngle, endAngle, angleRange, extendMode):
