@@ -76,7 +76,9 @@ def _extendColorLineForFullCircle(
     Returns (newColorLine, newStartAngle, newEndAngle).
     """
     newColorLine = []
-    for angle0, angle1, wrapOffset in _splitSweepSegments(startAngle, endAngle):
+    for angle0, angle1, wrapOffset in _splitSweepSegments(
+        startAngle, endAngle, extendMode
+    ):
         if angle1 <= angle0:
             continue
 
@@ -93,7 +95,7 @@ def _extendColorLineForFullCircle(
     return newColorLine, 0, 360
 
 
-def _splitSweepSegments(startAngle, endAngle):
+def _splitSweepSegments(startAngle, endAngle, extendMode):
     """Return one-turn angle segments with the correct shader t mapping.
 
     Sweep shader angles live in the 0°..360° turn. If the sweep crosses the
@@ -106,6 +108,12 @@ def _splitSweepSegments(startAngle, endAngle):
             (0, startAngle, 0),
             (startAngle, endAngle, 0),
             (endAngle, 360, 0),
+        )
+
+    if extendMode == ExtendMode.PAD:
+        return (
+            (0, startAngle, 0),
+            (startAngle, 360, 0),
         )
 
     wrappedEnd = endAngle - 360
