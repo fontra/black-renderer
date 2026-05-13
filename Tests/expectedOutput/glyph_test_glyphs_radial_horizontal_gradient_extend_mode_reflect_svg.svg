@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='ASCII'?>
+<svg width="250" height="250" preserveAspectRatio="xMinYMin slice" viewBox="0 0 250 250" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="gradient_0" spreadMethod="reflect" gradientUnits="userSpaceOnUse" fx="400" fy="500" fr="100" cx="700" cy="500" r="200">
+      <stop offset="0%" stop-color="#008000"/>
+      <stop offset="50%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#FF0000"/>
+    </radialGradient>
+  </defs>
+  <path d="M0,0 v1000 h1000 v-1000 h-1000 Z" fill="url(#gradient_0)" transform="matrix(0.25,0,0,-0.25,0,250)"/>
+</svg>

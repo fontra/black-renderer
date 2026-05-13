@@ -4,6 +4,7 @@ from fontTools.pens.basePen import BasePen
 from fontTools.ttLib.tables.otTables import CompositeMode, ExtendMode
 import skia
 from .base import Canvas, Surface
+from .sweepGradient import normalizeSweepColorLineAndAngles
 
 
 _compositeModeMap = {
@@ -158,13 +159,9 @@ class SkiaCanvas(Canvas):
         extendMode,
         gradientTransform,
     ):
-        # The following is needed to please the Skia shader, but it's a bit fuzzy
-        # to me how this affects the spec. Translated from:
-        # https://source.chromium.org/chromium/chromium/src/+/master:third_party/skia/src/ports/SkFontHost_FreeType_common.cpp;l=673-686
-        startAngle %= 360
-        endAngle %= 360
-        if startAngle >= endAngle:
-            endAngle += 360
+        colorLine, startAngle, endAngle = normalizeSweepColorLineAndAngles(
+            colorLine, startAngle, endAngle
+        )
         matrix = skia.Matrix()
         matrix.setAffine(gradientTransform)
         colors, stops = _unpackColorLine(colorLine)
