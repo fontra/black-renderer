@@ -32,7 +32,7 @@ setup(
     author_email="justvanrossum@gmail.com",
     license="Apache Software License 2.0",
     url="https://github.com/BlackFoundryCom/black-renderer",
-    python_requires=">=3.7",
+    python_requires=">=3.10",
     package_dir={"": "Lib"},
     packages=find_packages("Lib"),
     install_requires=[
