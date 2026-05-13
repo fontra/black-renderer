@@ -73,7 +73,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install --upgrade setuptools wheel
+        pip install --upgrade setuptools setuptools-scm wheel
     - name: Build wheel and source distro
       run: |
         python setup.py bdist_wheel
