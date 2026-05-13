@@ -148,8 +148,9 @@ def renderPDF(path, tempParent):
 
 def macRenderPDF(data):
     import AppKit
+    import Quartz
 
-    pdf = AppKit.PDFDocument.alloc().initWithData_(data)
+    pdf = Quartz.PDFDocument.alloc().initWithData_(data)
     if pdf.pageCount() != 1:
         return None
     page = pdf.pageAtIndex_(0)

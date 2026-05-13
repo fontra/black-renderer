@@ -30,7 +30,7 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libcairo2-dev librsvg2-bin pkg-config poppler-utils
+        sudo apt-get install -y libcairo2-dev libegl1 librsvg2-bin pkg-config poppler-utils
     - name: Install macOS system dependencies
       if: runner.os == 'macOS'
       run: |
