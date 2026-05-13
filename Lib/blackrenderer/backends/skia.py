@@ -6,7 +6,6 @@ import skia
 from .base import Canvas, Surface
 from .sweepGradient import normalizeSweepColorLineAndAngles
 
-
 _compositeModeMap = {
     CompositeMode.CLEAR: skia.BlendMode.kClear,
     CompositeMode.SRC: skia.BlendMode.kSrc,

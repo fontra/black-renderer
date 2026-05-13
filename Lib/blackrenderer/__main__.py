@@ -5,7 +5,6 @@ import re
 from .render import renderText
 from .backends import listBackends
 
-
 backendsAndSuffixes = listBackends()
 backendNames = [backendName for backendName, _ in backendsAndSuffixes]
 

@@ -5,7 +5,6 @@ from fontTools.ttLib.tables.otTables import CompositeMode, ExtendMode
 from blackrenderer.backends import getSurfaceClass
 from compareImages import compareImages
 
-
 testDir = pathlib.Path(__file__).resolve().parent
 dataDir = testDir / "data"
 expectedOutputDir = testDir / "expectedOutput"
@@ -62,7 +61,9 @@ def test_colorStops(backendName, surfaceClass, stopOffsets, extend):
 @pytest.mark.parametrize("angleSuffix, startAngle, endAngle", test_sweepAngles)
 @pytest.mark.parametrize("extend", test_extendModes)
 @pytest.mark.parametrize("backendName, surfaceClass", backends)
-def test_sweepGradient(backendName, surfaceClass, extend, angleSuffix, startAngle, endAngle):
+def test_sweepGradient(
+    backendName, surfaceClass, extend, angleSuffix, startAngle, endAngle
+):
     H, W = 400, 400
     center = (H / 2, W / 2)
     colors = [
@@ -83,7 +84,9 @@ def test_sweepGradient(backendName, surfaceClass, extend, angleSuffix, startAngl
 
     ext = surface.fileExtension
     stopsString = "_".join(str(s) for s in stopOffsets)
-    fileName = f"sweepGradient{angleSuffix}_{extend.name}_{stopsString}_{backendName}{ext}"
+    fileName = (
+        f"sweepGradient{angleSuffix}_{extend.name}_{stopsString}_{backendName}{ext}"
+    )
     expectedPath = expectedOutputDir / fileName
     outputPath = tmpOutputDir / fileName
     surface.saveImage(outputPath)

@@ -1,7 +1,6 @@
 import pathlib
 from blackrenderer.font import BlackRendererFont
 
-
 testDir = pathlib.Path(__file__).resolve().parent
 testFont1 = testDir / "data" / "noto-glyf_colr_1.ttf"
 

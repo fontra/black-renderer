@@ -19,7 +19,6 @@ from fontTools.ttLib.tables.otTables import (
 from fontTools.varLib.varStore import VarStoreInstancer
 import uharfbuzz as hb
 
-
 logger = logging.getLogger(__name__)
 
 

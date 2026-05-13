@@ -7,7 +7,6 @@ from fontTools.misc import etree as ET
 from fontTools.ttLib.tables.otTables import ExtendMode
 from .base import Canvas, Surface
 
-
 logger = logging.getLogger(__name__)
 
 

@@ -5,35 +5,35 @@ from contextlib import contextmanager
 class Canvas(ABC):
     @abstractmethod
     def newPath(self):
-        ...
+        pass
 
     @abstractmethod
     @contextmanager
     def savedState(self):
-        ...
+        pass
 
     @abstractmethod
     @contextmanager
     def compositeMode(self, compositeMode):
-        ...
+        pass
 
     @abstractmethod
     def transform(self, transform):
-        ...
+        pass
 
     @abstractmethod
     def clipPath(self, path):
-        ...
+        pass
 
     @abstractmethod
     def drawPathSolid(self, path, color):
-        ...
+        pass
 
     @abstractmethod
     def drawPathLinearGradient(
         self, path, colorLine, pt1, pt2, extendMode, gradientTransform
     ):
-        ...
+        pass
 
     @abstractmethod
     def drawPathRadialGradient(
@@ -47,7 +47,7 @@ class Canvas(ABC):
         extendMode,
         gradientTransform,
     ):
-        ...
+        pass
 
     @abstractmethod
     def drawPathSweepGradient(
@@ -60,7 +60,7 @@ class Canvas(ABC):
         extendMode,
         gradientTransform,
     ):
-        ...
+        pass
 
     # Generic convenience methods
 
@@ -100,14 +100,14 @@ class Surface(ABC):
 
     @abstractmethod
     def __init__(self):
-        ...
+        pass
 
     @abstractmethod
     @contextmanager
     def canvas(self, boundingBox):
         # boundingBox = (xMin, yMin, xMax, yMax)
-        ...
+        pass
 
     @abstractmethod
     def saveImage(self, path):
-        ...
+        pass
