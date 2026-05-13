@@ -167,7 +167,8 @@ class CairoCanvas(Canvas):
         maxY = max(d * d for d in (y1 - center[1], y2 - center[1]))
         R = sqrt(maxX + maxY)
         patches = buildSweepGradientPatches(
-            colorLine, center, R, startAngle, endAngle, useGouraudShading=False
+            colorLine, center, R, startAngle, endAngle, useGouraudShading=False,
+            extendMode=extendMode,
         )
         for (P0, color0), C0, C1, (P1, color1) in patches:
             # draw patch
