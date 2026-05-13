@@ -16,49 +16,49 @@ uni2693
       Paint
           # PaintSolid
           Format 2
-          PaletteIndex 2148
+          PaletteIndex 2172
           Alpha 1.0
-      Glyph glyph39143
+      Glyph glyph21626
     - # PaintGlyph
       Format 10
       Paint
           # PaintSolid
           Format 2
-          PaletteIndex 871
+          PaletteIndex 877
           Alpha 1.0
-      Glyph glyph39144
+      Glyph glyph21627
     - # PaintGlyph
       Format 10
       Paint
           # PaintSolid
           Format 2
-          PaletteIndex 2491
+          PaletteIndex 2517
           Alpha 1.0
-      Glyph glyph39145
+      Glyph glyph21628
     - # PaintGlyph
       Format 10
       Paint
           # PaintSolid
           Format 2
-          PaletteIndex 871
+          PaletteIndex 877
           Alpha 0.89
-      Glyph glyph39146
+      Glyph glyph21629
     - # PaintGlyph
       Format 10
       Paint
           # PaintSolid
           Format 2
-          PaletteIndex 2491
+          PaletteIndex 2517
           Alpha 1.0
-      Glyph glyph39147
+      Glyph glyph21630
     - # PaintGlyph
       Format 10
       Paint
           # PaintSolid
           Format 2
-          PaletteIndex 871
+          PaletteIndex 877
           Alpha 1.0
-      Glyph glyph39148
+      Glyph glyph21631
 """
 
 
