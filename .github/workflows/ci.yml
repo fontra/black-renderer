@@ -73,11 +73,10 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install --upgrade setuptools setuptools-scm wheel
+        pip install --upgrade build
     - name: Build wheel and source distro
       run: |
-        python setup.py bdist_wheel
-        python setup.py sdist
+        python -m build
     - name: Extract release notes from annotated tag message
       id: release_notes
       env:
@@ -101,7 +100,7 @@ jobs:
           echo "IS_PRERELEASE=false" >> "$GITHUB_ENV"
         fi
     - name: Publish distributions to PyPI
-      uses: pypa/gh-action-pypi-publish@master
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.pypi_token }}
