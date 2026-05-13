@@ -103,7 +103,7 @@ If you have a Python 3 environment set up, then all you need to do is:
 
 ## Install for contributing / setting up an environment
 
-Have Python 3.7 or higher installed.
+Have Python 3.10 or higher installed.
 
 Open Terminal.
 
