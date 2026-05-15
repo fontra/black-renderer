@@ -113,6 +113,25 @@ test_glyphs = [
 ]
 
 
+sweep_regression_glyphs = [
+    "sweep_0_360_pad_wide",
+    "sweep_60_300_reflect_wide",
+    "sweep_90_45_reflect_wide",
+    "sweep_coincident_angles_forward_blue_red_pad",
+    "sweep_coincident_angles_forward_blue_red_repeat",
+    "sweep_coincident_stops_forward_blue_red_pad",
+    "sweep_coincident_stops_forward_blue_red_repeat",
+]
+
+sweep_regression_backends = [
+    (name, getSurfaceClass(name)) for name in ["cairo", "coregraphics", "skia"]
+]
+sweep_regression_backends = [
+    (name, surface) for name, surface in sweep_regression_backends
+    if surface is not None
+]
+
+
 @pytest.mark.parametrize("fontName, glyphName, location, paletteIndex", test_glyphs)
 @pytest.mark.parametrize("backendName, surfaceClass", backends)
 def test_renderGlyph(
@@ -139,6 +158,31 @@ def test_renderGlyph(
         f"glyph_{fontName}_{glyphName}{locationString}{paletteString}"
         f"_{backendName}{ext}"
     )
+    expectedPath = expectedOutputDir / fileName
+    outputPath = tmpOutputDir / fileName
+    surface.saveImage(outputPath)
+    diff = compareImages(expectedPath, outputPath)
+    assert diff < _getImageTolerance(backendName), diff
+
+
+@pytest.mark.parametrize("glyphName", sweep_regression_glyphs)
+@pytest.mark.parametrize("backendName, surfaceClass", sweep_regression_backends)
+def test_renderSweepRegressionGlyphs(backendName, surfaceClass, glyphName):
+    font = BlackRendererFont(testFonts["test_glyphs"])
+
+    scaleFactor = 1 / 4
+    boundingBox = font.getGlyphBounds(glyphName)
+    boundingBox = scaleRect(boundingBox, scaleFactor, scaleFactor)
+    boundingBox = intRect(boundingBox)
+    palette = font.getPalette(0)
+
+    surface = surfaceClass()
+    ext = surface.fileExtension
+    with surface.canvas(boundingBox) as canvas:
+        canvas.scale(scaleFactor)
+        font.drawGlyph(glyphName, canvas, palette=palette)
+
+    fileName = f"glyph_test_glyphs_{glyphName}_sweepRegression_{backendName}{ext}"
     expectedPath = expectedOutputDir / fileName
     outputPath = tmpOutputDir / fileName
     surface.saveImage(outputPath)

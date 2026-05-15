@@ -11,7 +11,8 @@ from .sweepGradient import buildSweepGradientPatches
 _compositeModeMap = {
     CompositeMode.CLEAR: CG.kCGBlendModeClear,
     CompositeMode.SRC: CG.kCGBlendModeCopy,
-    CompositeMode.DEST: CG.kCGBlendModeNormal,  # This is wrong, but is worked around in canvas.compositeMode()
+    # This is wrong, but is worked around in canvas.compositeMode().
+    CompositeMode.DEST: CG.kCGBlendModeNormal,
     CompositeMode.SRC_OVER: CG.kCGBlendModeNormal,
     CompositeMode.DEST_OVER: CG.kCGBlendModeDestinationOver,
     CompositeMode.SRC_IN: CG.kCGBlendModeSourceIn,
@@ -233,6 +234,8 @@ class CoreGraphicsCanvas(Canvas):
                 useGouraudShading=True,
                 extendMode=extendMode,
             )
+            if not patches:
+                return
             CG.CGContextBeginTransparencyLayer(self.context, None)
             CG.CGContextSetAllowsAntialiasing(self.context, False)
             for (P0, color0), (P1, color1) in patches:

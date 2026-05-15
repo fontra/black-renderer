@@ -174,6 +174,9 @@ class CairoCanvas(Canvas):
             useGouraudShading=False,
             extendMode=extendMode,
         )
+        if not patches:
+            self.context.restore()
+            return
         for (P0, color0), C0, C1, (P1, color1) in patches:
             # draw patch
             pat.begin_patch()

@@ -1,4 +1,4 @@
-from math import pi, ceil, floor, sin, cos, radians
+from math import pi, ceil, floor, sin, cos, radians, isclose
 from fontTools.misc.vector import Vector
 from fontTools.ttLib.tables.otTables import ExtendMode
 
@@ -34,16 +34,10 @@ def buildSweepGradientPatches(
         360° circle."""
 
     colorLine, startAngle, endAngle = normalizeSweepColorLineAndAngles(
-        colorLine, startAngle, endAngle
+        colorLine, startAngle, endAngle, extendMode
     )
-
-    angleRange = endAngle - startAngle
-
-    # Extend the color line to cover the full 360° circle if needed
-    if extendMode is not None and angleRange < 360:
-        colorLine, startAngle, endAngle = _extendColorLineForFullCircle(
-            colorLine, startAngle, endAngle, angleRange, extendMode
-        )
+    if not colorLine:
+        return []
 
     return _buildPatches(
         colorLine,
@@ -56,7 +50,17 @@ def buildSweepGradientPatches(
     )
 
 
-def normalizeSweepColorLineAndAngles(colorLine, startAngle, endAngle):
+def normalizeSweepColorLineAndAngles(colorLine, startAngle, endAngle, extendMode=None):
+    colorLine = _normalizeCoincidentStops(colorLine, extendMode)
+    if not colorLine:
+        return [], 0, 0
+
+    if _anglesCoincident(startAngle, endAngle):
+        if extendMode in (ExtendMode.REPEAT, ExtendMode.REFLECT):
+            return [], 0, 0
+        if extendMode == ExtendMode.PAD:
+            return _padColorLineForCoincidentAngles(colorLine, startAngle), 0, 360
+
     # When endAngle < startAngle, the sweep covers the arc going clockwise.
     # Our backends consume increasing angles, so swap angles and reverse the
     # color line to draw the same color rays.
@@ -64,69 +68,66 @@ def normalizeSweepColorLineAndAngles(colorLine, startAngle, endAngle):
         startAngle, endAngle = endAngle, startAngle
         colorLine = [(1.0 - stop, color) for stop, color in reversed(colorLine)]
 
-    # Normalize angles to [0, 360) range and ensure startAngle < endAngle.
-    startAngle %= 360
-    endAngle %= 360
-    if startAngle >= endAngle:
-        endAngle += 360
+    if extendMode is not None:
+        colorLine = _colorLineForDrawingTurn(
+            colorLine, startAngle, endAngle, extendMode
+        )
+        return colorLine, 0, 360
 
     return colorLine, startAngle, endAngle
 
 
-def _extendColorLineForFullCircle(
-    colorLine, startAngle, endAngle, angleRange, extendMode
-):
-    """Extend the color line to cover a full 360° circle based on the extend mode.
+def _normalizeCoincidentStops(colorLine, extendMode):
+    if not colorLine:
+        return []
+    if not all(isclose(stop, colorLine[0][0], abs_tol=1e-9) for stop, _ in colorLine):
+        return colorLine
+    if extendMode in (ExtendMode.REPEAT, ExtendMode.REFLECT):
+        return []
+    if extendMode != ExtendMode.PAD:
+        return colorLine
 
-    Returns (newColorLine, newStartAngle, newEndAngle).
-    """
-    newColorLine = []
-    for angle0, angle1, wrapOffset in _splitSweepSegments(
-        startAngle, endAngle, extendMode
-    ):
-        if angle1 <= angle0:
-            continue
-
-        t0 = (angle0 + wrapOffset - startAngle) / angleRange
-        t1 = (angle1 + wrapOffset - startAngle) / angleRange
-        segmentSamples = _extendedSegmentSamples(colorLine, t0, t1, extendMode)
-
-        for t, color in segmentSamples:
-            angle = startAngle + t * angleRange - wrapOffset
-            if angle0 <= angle <= angle1:
-                newColorLine.append((angle / 360.0, color))
-
-    newColorLine.sort(key=lambda item: item[0])
-    return newColorLine, 0, 360
+    offset = max(0, min(1, colorLine[0][0]))
+    firstColor = colorLine[0][1]
+    lastColor = colorLine[-1][1]
+    return [
+        (0, firstColor),
+        (offset, firstColor),
+        (offset, lastColor),
+        (1, lastColor),
+    ]
 
 
-def _splitSweepSegments(startAngle, endAngle, extendMode):
-    """Return one-turn angle segments with the correct shader t mapping.
+def _anglesCoincident(startAngle, endAngle):
+    return isclose(startAngle, endAngle, abs_tol=1e-9)
 
-    Sweep shader angles live in the 0°..360° turn. If the sweep crosses the
-    angle wrap, angles from 0° to endAngle % 360 are part of the in-range
-    sector and must be evaluated with a +360° offset. Angles between the
-    wrapped end and the start are before the start, not after the end.
-    """
-    if endAngle <= 360:
-        return (
-            (0, startAngle, 0),
-            (startAngle, endAngle, 0),
-            (endAngle, 360, 0),
-        )
 
-    if extendMode == ExtendMode.PAD:
-        return (
-            (0, startAngle, 0),
-            (startAngle, 360, 0),
-        )
+def _padColorLineForCoincidentAngles(colorLine, startAngle):
+    angle = (startAngle % 360) / 360.0
+    firstColor = colorLine[0][1]
+    lastColor = colorLine[-1][1]
+    return [
+        (0, firstColor),
+        (angle, firstColor),
+        (angle, lastColor),
+        (1, lastColor),
+    ]
 
-    wrappedEnd = endAngle - 360
-    return (
-        (0, wrappedEnd, 360),
-        (wrappedEnd, startAngle, 0),
-        (startAngle, 360, 0),
-    )
+
+def _colorLineForDrawingTurn(colorLine, startAngle, endAngle, extendMode):
+    angleRange = endAngle - startAngle
+    if angleRange <= 0:
+        return []
+
+    t0 = (0 - startAngle) / angleRange
+    t1 = (360 - startAngle) / angleRange
+    samples = _extendedSegmentSamples(colorLine, t0, t1, extendMode)
+    colorLine = [
+        ((startAngle + t * angleRange) / 360.0, color)
+        for t, color in samples
+    ]
+    colorLine.sort(key=lambda item: item[0])
+    return colorLine
 
 
 def _extendedSegmentSamples(colorLine, t0, t1, extendMode):

@@ -3,6 +3,7 @@ import pytest
 from fontTools.misc.transform import Identity
 from fontTools.ttLib.tables.otTables import CompositeMode, ExtendMode
 from blackrenderer.backends import getSurfaceClass
+from blackrenderer.backends.sweepGradient import normalizeSweepColorLineAndAngles
 from compareImages import compareImages
 
 testDir = pathlib.Path(__file__).resolve().parent
@@ -97,6 +98,60 @@ def assertImageSimilar(expectedPath, outputPath, backendName):
     diff = compareImages(expectedPath, outputPath)
     tolerance = 0.0008 if backendName == "skia" else 0.00013
     assert diff < tolerance, diff
+
+
+def test_sweepGradient_wide_color_line_maps_to_drawing_turn():
+    red = (1, 0, 0, 1)
+    blue = (0, 0, 1, 1)
+    white = (1, 1, 1, 1)
+    teal = (0, 0.3, 0.3, 1)
+    colorLine = [(0, white), (0.5, blue), (5 / 6, red), (1, teal)]
+
+    normalized, startAngle, endAngle = normalizeSweepColorLineAndAngles(
+        colorLine, -90, 450, ExtendMode.PAD
+    )
+
+    assert startAngle == 0
+    assert endAngle == 360
+    assert [round(stop, 6) for stop, _ in normalized] == [0, 0.5, 0.5, 1]
+    assert normalized[-1][1] == pytest.approx(red, abs=1e-8)
+
+
+@pytest.mark.parametrize("extend", [ExtendMode.REPEAT, ExtendMode.REFLECT])
+def test_sweepGradient_coincident_angles_repeat_reflect_draw_nothing(extend):
+    colorLine = [(0, (1, 0, 0, 1)), (1, (0, 0, 1, 1))]
+
+    normalized, startAngle, endAngle = normalizeSweepColorLineAndAngles(
+        colorLine, 90, 90, extend
+    )
+
+    assert normalized == []
+    assert (startAngle, endAngle) == (0, 0)
+
+
+def test_sweepGradient_coincident_angles_pad_becomes_step_turn():
+    red = (1, 0, 0, 1)
+    blue = (0, 0, 1, 1)
+
+    normalized, startAngle, endAngle = normalizeSweepColorLineAndAngles(
+        [(0, red), (1, blue)], 90, 90, ExtendMode.PAD
+    )
+
+    assert startAngle == 0
+    assert endAngle == 360
+    assert normalized == [(0, red), (0.25, red), (0.25, blue), (1, blue)]
+
+
+@pytest.mark.parametrize("extend", [ExtendMode.REPEAT, ExtendMode.REFLECT])
+def test_sweepGradient_coincident_stops_repeat_reflect_draw_nothing(extend):
+    colorLine = [(0.5, (1, 0, 0, 1)), (0.5, (0, 0, 1, 1))]
+
+    normalized, startAngle, endAngle = normalizeSweepColorLineAndAngles(
+        colorLine, 45, 90, extend
+    )
+
+    assert normalized == []
+    assert (startAngle, endAngle) == (0, 0)
 
 
 test_compositeModes = [
