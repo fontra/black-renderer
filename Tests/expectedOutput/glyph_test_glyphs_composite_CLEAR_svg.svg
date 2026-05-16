@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='ASCII'?>
+<svg width="250" height="250" preserveAspectRatio="xMinYMin slice" viewBox="0 0 250 250" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <clipPath id="clip_0">
+    <path d="M0,0 v1000 h1000 v-1000 Z" transform="matrix(1,0,0,1,0,0)"/>
+  </clipPath>
+  <clipPath id="clip_1">
+    <path d="M0,0 v1000 h1000 v-1000 Z" transform="matrix(2,0,0,2,-333,-667)"/>
+  </clipPath>
+  <clipPath id="clip_2">
+    <path d="M0,0 v1000 h1000 v-1000 Z" transform="matrix(2,0,0,2,-667,-333)"/>
+  </clipPath>
+  <path d="M475,525 v225 h50 v-225 h225 v-50 h-225 v-225 h-50 v225 h-225 v50 h225 Z" fill="#000000" transform="matrix(0.25,0,0,-0.25,0,250)" clip-path="url(#clip_0)"/>
+  <path d="M0,0 v1000 h1000 v-1000 h-1000 Z" fill="#FFDC01" transform="matrix(0.125,0,0,-0.125,41.625,166.625)" clip-path="url(#clip_1)"/>
+  <path d="M0,0 v1000 h1000 v-1000 h-1000 Z" fill="#68C7E8" transform="matrix(0.125,0,0,-0.125,83.375,208.375)" clip-path="url(#clip_2)"/>
+</svg>
