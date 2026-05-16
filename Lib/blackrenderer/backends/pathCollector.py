@@ -36,7 +36,7 @@ class PathCollectorCanvas(Canvas):
         self.currentTransform = self.currentTransform.transform(transform)
 
     def clipPath(self, path):
-        self._addPath(path)
+        pass
 
     def drawPathSolid(self, path, color):
         self._addPath(path)

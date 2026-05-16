@@ -138,7 +138,7 @@ class SVGCanvas(Canvas):
             if len(self.clipStack) > 1:
                 # FIXME: intersect clip paths with pathops
                 self._warn(
-                    "nested_clip"
+                    "nested_clip",
                     "SVG canvas does not support more than two nested clip paths"
                 )
             if clipTransform is not None:

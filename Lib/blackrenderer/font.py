@@ -129,15 +129,9 @@ class BlackRendererFont:
     def getGlyphBounds(self, glyphName):
         if glyphName in self.colrV1Glyphs:
             bounds = self._getGlyphBounds(glyphName)
-            if self.clipBoxes is not None:
-                box = self.clipBoxes.get(glyphName)
-                if box is not None:
-                    if (
-                        box.Format == ClipBoxFormat.Variable
-                        and self.instancer is not None
-                    ):
-                        box = VarTableWrapper(box, self.instancer, self.varIndexMap)
-                    bounds = box.xMin, box.yMin, box.xMax, box.yMax
+            box = self._getClipBox(glyphName)
+            if box is not None:
+                bounds = box.xMin, box.yMin, box.xMax, box.yMax
         elif glyphName in self.colrV0Glyphs:
             # For COLRv0, we take the union of all layer bounds
             bounds = None
@@ -187,7 +181,8 @@ class BlackRendererFont:
             raise RecursionError(f"Glyph '{glyph.BaseGlyph}' references itself")
         self._recursionCheck.add(glyph.BaseGlyph)
         try:
-            self._drawPaint(glyph.Paint, canvas)
+            with self._ensureClipBox(glyph.BaseGlyph, canvas):
+                self._drawPaint(glyph.Paint, canvas)
         finally:
             self._recursionCheck.remove(glyph.BaseGlyph)
 
@@ -408,6 +403,35 @@ class BlackRendererFont:
             yield
         self.currentPath = currentPath
         self.currentTransform = currentTransform
+
+    @contextmanager
+    def _ensureClipBox(self, glyphName, canvas):
+        box = self._getClipBox(glyphName)
+        if box is None:
+            yield
+            return
+
+        path = canvas.newPath()
+        path.moveTo((box.xMin, box.yMin))
+        path.lineTo((box.xMin, box.yMax))
+        path.lineTo((box.xMax, box.yMax))
+        path.lineTo((box.xMax, box.yMin))
+        path.closePath()
+        with canvas.savedState():
+            canvas.clipPath(path)
+            yield
+
+    def _getClipBox(self, glyphName):
+        if self.clipBoxes is None:
+            return None
+        box = self.clipBoxes.get(glyphName)
+        if (
+            box is not None
+            and box.Format == ClipBoxFormat.Variable
+            and self.instancer is not None
+        ):
+            box = VarTableWrapper(box, self.instancer, self.varIndexMap)
+        return box
 
     @contextmanager
     def _savedTransform(self):
