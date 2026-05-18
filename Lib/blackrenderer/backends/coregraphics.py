@@ -237,6 +237,7 @@ class CoreGraphicsCanvas(Canvas):
             if not patches:
                 return
             CG.CGContextBeginTransparencyLayer(self.context, None)
+            CG.CGContextSetBlendMode(self.context, CG.kCGBlendModeCopy)
             CG.CGContextSetAllowsAntialiasing(self.context, False)
             for (P0, color0), (P1, color1) in patches:
                 color = 0.5 * (color0 + color1)
