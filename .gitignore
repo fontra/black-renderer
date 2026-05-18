@@ -32,4 +32,7 @@ tags
 # This project
 Lib/blackrenderer/_version.py
 Tests/tmpOutput/
+Tests/expectedOutput/*_chrome.png
+Tests/expectedOutput/*_otcanvas.png
+Tests/expectedOutput/*_otsvg.png
 Vault/

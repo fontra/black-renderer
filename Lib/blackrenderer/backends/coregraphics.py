@@ -1,17 +1,18 @@
 from contextlib import contextmanager
-from math import ceil, sqrt
+from math import ceil, radians, sqrt
 import os
 from fontTools.pens.basePen import BasePen
 from fontTools.ttLib.tables.otTables import CompositeMode, ExtendMode
 from CoreFoundation import CFDataCreateMutable
 import Quartz as CG
 from .base import Canvas, Surface
-from .sweepGradient import buildSweepGradientPatches
+from .sweepGradient import buildSweepGradientPatches, normalizeSweepColorLineAndAngles
 
 _compositeModeMap = {
     CompositeMode.CLEAR: CG.kCGBlendModeClear,
     CompositeMode.SRC: CG.kCGBlendModeCopy,
-    CompositeMode.DEST: CG.kCGBlendModeNormal,  # This is wrong, but is worked around in canvas.compositeMode()
+    # This is wrong, but is worked around in canvas.compositeMode().
+    CompositeMode.DEST: CG.kCGBlendModeNormal,
     CompositeMode.SRC_OVER: CG.kCGBlendModeNormal,
     CompositeMode.DEST_OVER: CG.kCGBlendModeDestinationOver,
     CompositeMode.SRC_IN: CG.kCGBlendModeSourceIn,
@@ -216,36 +217,55 @@ class CoreGraphicsCanvas(Canvas):
                 CG.CGContextClip(self.context)
             # else: unbounded source, paint the existing clip area
             self.transform(gradientTransform)
-            # find current path' extent
-            (x1, y1), (w, h) = CG.CGContextGetClipBoundingBox(self.context)
-            x2 = x1 + w
-            y2 = y1 + h
-            maxX = max(d * d for d in (x1 - center[0], x2 - center[0]))
-            maxY = max(d * d for d in (y1 - center[1], y2 - center[1]))
-            R = sqrt(maxX + maxY)
-            # compute the triangle fan approximating the sweep gradient
-            patches = buildSweepGradientPatches(
-                colorLine,
-                center,
-                R,
-                startAngle,
-                endAngle,
-                useGouraudShading=True,
-                extendMode=extendMode,
+            colorLine, startAngle, endAngle = normalizeSweepColorLineAndAngles(
+                colorLine, startAngle, endAngle, extendMode
             )
-            CG.CGContextBeginTransparencyLayer(self.context, None)
-            CG.CGContextSetAllowsAntialiasing(self.context, False)
-            for (P0, color0), (P1, color1) in patches:
-                color = 0.5 * (color0 + color1)
-                CG.CGContextMoveToPoint(self.context, center[0], center[1])
-                CG.CGContextAddLineToPoint(self.context, P0[0], P0[1])
-                CG.CGContextAddLineToPoint(self.context, P1[0], P1[1])
-                CG.CGContextSetFillColorWithColor(
-                    self.context, CG.CGColorCreate(_sRGBColorSpace, color)
+            if not colorLine:
+                return
+            if hasattr(CG, "CGContextDrawConicGradient"):
+                colors, stops = _unpackColorLine(colorLine)
+                gradient = CG.CGGradientCreateWithColors(
+                    _sRGBColorSpace, colors, stops
                 )
-                CG.CGContextFillPath(self.context)
-            CG.CGContextSetAllowsAntialiasing(self.context, True)
-            CG.CGContextEndTransparencyLayer(self.context)
+                CG.CGContextDrawConicGradient(
+                    self.context, gradient, center, radians(startAngle)
+                )
+            else:
+                self._drawPathSweepGradientWithPatches(
+                    colorLine, center, startAngle, endAngle
+                )
+
+    def _drawPathSweepGradientWithPatches(self, colorLine, center, startAngle, endAngle):
+        (x1, y1), (w, h) = CG.CGContextGetClipBoundingBox(self.context)
+        x2 = x1 + w
+        y2 = y1 + h
+        maxX = max(d * d for d in (x1 - center[0], x2 - center[0]))
+        maxY = max(d * d for d in (y1 - center[1], y2 - center[1]))
+        R = sqrt(maxX + maxY)
+        patches = buildSweepGradientPatches(
+            colorLine,
+            center,
+            R,
+            startAngle,
+            endAngle,
+            useGouraudShading=True,
+        )
+        if not patches:
+            return
+        CG.CGContextBeginTransparencyLayer(self.context, None)
+        CG.CGContextSetBlendMode(self.context, CG.kCGBlendModeCopy)
+        CG.CGContextSetAllowsAntialiasing(self.context, False)
+        for (P0, color0), (P1, color1) in patches:
+            color = 0.5 * (color0 + color1)
+            CG.CGContextMoveToPoint(self.context, center[0], center[1])
+            CG.CGContextAddLineToPoint(self.context, P0[0], P0[1])
+            CG.CGContextAddLineToPoint(self.context, P1[0], P1[1])
+            CG.CGContextSetFillColorWithColor(
+                self.context, CG.CGColorCreate(_sRGBColorSpace, color)
+            )
+            CG.CGContextFillPath(self.context)
+        CG.CGContextSetAllowsAntialiasing(self.context, True)
+        CG.CGContextEndTransparencyLayer(self.context)
 
     def _shouldNotDrawPath(self, path):
         return self.clipIsEmpty or (

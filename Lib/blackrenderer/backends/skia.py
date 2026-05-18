@@ -159,8 +159,10 @@ class SkiaCanvas(Canvas):
         gradientTransform,
     ):
         colorLine, startAngle, endAngle = normalizeSweepColorLineAndAngles(
-            colorLine, startAngle, endAngle
+            colorLine, startAngle, endAngle, extendMode
         )
+        if not colorLine:
+            return
         matrix = skia.Matrix()
         matrix.setAffine(gradientTransform)
         colors, stops = _unpackColorLine(colorLine)
@@ -169,7 +171,7 @@ class SkiaCanvas(Canvas):
             cy=center[1],
             colors=colors,
             positions=stops,
-            mode=_extendModeMap[extendMode],
+            mode=skia.TileMode.kClamp,
             startAngle=startAngle,
             endAngle=endAngle,
             localMatrix=matrix,

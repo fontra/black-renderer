@@ -31,6 +31,7 @@ testFonts = {
     "nabla": dataDir / "Nabla.subset.ttf",
     "issue113": dataDir / "issue113.ttf",
     "issue116": dataDir / "Noto-COLRv1.subset.ttf",
+    "overlap_radial_alpha": dataDir / "overlap-radial-alpha.ttf",
 }
 
 
@@ -55,6 +56,7 @@ test_glyphs = [
     ("test_glyphs", "clip_box_bottom_right", None, 0),
     ("test_glyphs", "clip_box_top_right", None, 0),
     ("test_glyphs", "clip_box_center", None, 0),
+    ("test_glyphs", "composite_CLEAR", None, 0),
     ("test_glyphs", "composite_DEST_OVER", None, 0),
     ("test_glyphs", "composite_XOR", None, 0),
     ("test_glyphs", "composite_OVERLAY", None, 0),
@@ -71,7 +73,16 @@ test_glyphs = [
     ("test_glyphs", "sweep_90_0_pad_narrow", None, 0),
     ("test_glyphs", "sweep_90_0_reflect_narrow", None, 0),
     ("test_glyphs", "sweep_90_0_repeat_narrow", None, 0),
+    ("test_glyphs", "sweep_90_45_reflect_narrow", None, 0),
+    ("test_glyphs", "sweep_45_90_repeat_narrow", None, 0),
     ("test_glyphs", "sweep_440_270_pad_wide", None, 0),
+    (
+        "test_glyphs",
+        "sweep_coincident_angles_forward_linen_gray_reflect",
+        None,
+        0,
+    ),
+    ("test_glyphs", "foreground_color_sweep_alpha_0.3", None, 0),
     ("test_glyphs", "linear_repeat_0_1", None, 0),
     ("test_glyphs", "linear_repeat_0.2_0.8", None, 0),
     ("test_glyphs", "linear_repeat_0_1.5", None, 0),
@@ -91,6 +102,8 @@ test_glyphs = [
     ("test_glyphs", "radial_horizontal_gradient_extend_mode_pad", None, 0),
     ("test_glyphs", "radial_horizontal_gradient_extend_mode_repeat", None, 0),
     ("test_glyphs", "radial_horizontal_gradient_extend_mode_reflect", None, 0),
+    ("overlap_radial_alpha", "overlap_radial_alpha", None, 0),
+    ("overlap_radial_alpha", "overlap_sweep_alpha", None, 0),
     ("test_glyphs", "rotate_10_center_0_0", None, 0),
     ("test_glyphs", "rotate_-10_center_1000_1000", None, 0),
     ("test_glyphs", "rotate_25_center_500.0_500.0", None, 0),
@@ -110,6 +123,25 @@ test_glyphs = [
     ("issue116", "u1F39B", None, 0),
     ("issue116", "u1F39F", None, 0),
     ("issue116", "u1F3AB", None, 0),
+]
+
+
+sweep_regression_glyphs = [
+    "sweep_0_360_pad_wide",
+    "sweep_60_300_reflect_wide",
+    "sweep_90_45_reflect_wide",
+    "sweep_coincident_angles_forward_blue_red_pad",
+    "sweep_coincident_angles_forward_blue_red_repeat",
+    "sweep_coincident_stops_forward_blue_red_pad",
+    "sweep_coincident_stops_forward_blue_red_repeat",
+]
+
+sweep_regression_backends = [
+    (name, getSurfaceClass(name)) for name in ["cairo", "coregraphics", "skia"]
+]
+sweep_regression_backends = [
+    (name, surface) for name, surface in sweep_regression_backends
+    if surface is not None
 ]
 
 
@@ -139,6 +171,31 @@ def test_renderGlyph(
         f"glyph_{fontName}_{glyphName}{locationString}{paletteString}"
         f"_{backendName}{ext}"
     )
+    expectedPath = expectedOutputDir / fileName
+    outputPath = tmpOutputDir / fileName
+    surface.saveImage(outputPath)
+    diff = compareImages(expectedPath, outputPath)
+    assert diff < _getImageTolerance(backendName), diff
+
+
+@pytest.mark.parametrize("glyphName", sweep_regression_glyphs)
+@pytest.mark.parametrize("backendName, surfaceClass", sweep_regression_backends)
+def test_renderSweepRegressionGlyphs(backendName, surfaceClass, glyphName):
+    font = BlackRendererFont(testFonts["test_glyphs"])
+
+    scaleFactor = 1 / 4
+    boundingBox = font.getGlyphBounds(glyphName)
+    boundingBox = scaleRect(boundingBox, scaleFactor, scaleFactor)
+    boundingBox = intRect(boundingBox)
+    palette = font.getPalette(0)
+
+    surface = surfaceClass()
+    ext = surface.fileExtension
+    with surface.canvas(boundingBox) as canvas:
+        canvas.scale(scaleFactor)
+        font.drawGlyph(glyphName, canvas, palette=palette)
+
+    fileName = f"glyph_test_glyphs_{glyphName}_sweepRegression_{backendName}{ext}"
     expectedPath = expectedOutputDir / fileName
     outputPath = tmpOutputDir / fileName
     surface.saveImage(outputPath)
