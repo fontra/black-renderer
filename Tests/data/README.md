@@ -41,3 +41,8 @@
 - Author: Google Inc.
 - License: Apache 2.0, https://github.com/googlefonts/color-fonts/blob/main/LICENSE
 - Source: https://github.com/googlefonts/color-fonts
+
+### `overlap-radial-alpha.ttf`
+
+- Author: Felix Herbst.
+- License: CC0.

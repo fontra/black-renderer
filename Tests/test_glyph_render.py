@@ -31,6 +31,7 @@ testFonts = {
     "nabla": dataDir / "Nabla.subset.ttf",
     "issue113": dataDir / "issue113.ttf",
     "issue116": dataDir / "Noto-COLRv1.subset.ttf",
+    "overlap_radial_alpha": dataDir / "overlap-radial-alpha.ttf",
 }
 
 
@@ -101,6 +102,8 @@ test_glyphs = [
     ("test_glyphs", "radial_horizontal_gradient_extend_mode_pad", None, 0),
     ("test_glyphs", "radial_horizontal_gradient_extend_mode_repeat", None, 0),
     ("test_glyphs", "radial_horizontal_gradient_extend_mode_reflect", None, 0),
+    ("overlap_radial_alpha", "overlap_radial_alpha", None, 0),
+    ("overlap_radial_alpha", "overlap_sweep_alpha", None, 0),
     ("test_glyphs", "rotate_10_center_0_0", None, 0),
     ("test_glyphs", "rotate_-10_center_1000_1000", None, 0),
     ("test_glyphs", "rotate_25_center_500.0_500.0", None, 0),
