@@ -31,7 +31,7 @@ setup(
     author="Black Foundry, Just van Rossum, Samuel Hornus",
     author_email="justvanrossum@gmail.com",
     license="Apache Software License 2.0",
-    url="https://github.com/BlackFoundryCom/black-renderer",
+    url="https://github.com/fontra/black-renderer",
     python_requires=">=3.10",
     package_dir={"": "Lib"},
     packages=find_packages("Lib"),
